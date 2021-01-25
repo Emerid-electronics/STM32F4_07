@@ -56,7 +56,7 @@ static void MX_GPIO_Init(void);
 static void MX_TIM11_Init(void);
 static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
-
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -95,7 +95,7 @@ int main(void)
   MX_TIM11_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-
+  HAL_TIM_Base_Start_IT(&htim11);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -242,7 +242,18 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
+	if (htim ->Instance == TIM11){
+		static uint16_t counter = 0;
+		uint8_t data[50];
+		uint16_t size = 0;
 
+		counter++;
+		size = sprintf(data, "Liczba wyslanych wiadomosci: %d.\n\r", counter);
+		HAL_UART_Transmit_IT(&huart1, data, size);
+		HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+	}
+}
 /* USER CODE END 4 */
 
 /**
