@@ -23,7 +23,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <stdlib.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -47,7 +47,7 @@ TIM_HandleTypeDef htim11;
 UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
-
+uint8_t received;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -57,6 +57,7 @@ static void MX_TIM11_Init(void);
 static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim);
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -97,7 +98,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start_IT(&htim11);
   /* USER CODE END 2 */
-
+  HAL_UART_Receive_IT(&huart1,&received,1);
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
@@ -253,6 +254,30 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 		HAL_UART_Transmit_IT(&huart1, data, size);
 		HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
 	}
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
+	uint8_t echo[50];
+	uint8_t size = 0;
+
+	switch (atoi(&received)){
+	case 0:
+		size = sprintf(echo, "STOP\r\n");
+		HAL_GPIO_WritePin(LED_GPIO_Port,LED_Pin,RESET);
+		break;
+
+	case 1:
+		size = sprintf(echo, "START\r\n");
+		HAL_GPIO_WritePin(LED_GPIO_Port,LED_Pin,SET);
+		break;
+
+	default:
+		size = sprintf(echo, "Odebrano nieznany znak: %c\r\n", received);
+		break;
+	}
+
+	HAL_UART_Transmit_IT(&huart1, echo, size);
+	HAL_UART_Receive_IT(&huart1,&received,1);
 }
 /* USER CODE END 4 */
 
