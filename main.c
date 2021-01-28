@@ -45,14 +45,17 @@
 TIM_HandleTypeDef htim11;
 
 UART_HandleTypeDef huart1;
+DMA_HandleTypeDef hdma_usart1_rx;
+DMA_HandleTypeDef hdma_usart1_tx;
 
 /* USER CODE BEGIN PV */
-
+uint8_t received[10];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
 static void MX_TIM11_Init(void);
 static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
@@ -92,10 +95,11 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_TIM11_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-  HAL_TIM_Base_Start_IT(&htim11);
+  HAL_UART_Receive_DMA(&huart1, received,10);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -215,6 +219,24 @@ static void MX_USART1_UART_Init(void)
 
 }
 
+/** 
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void) 
+{
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA2_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA2_Stream2_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA2_Stream2_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Stream2_IRQn);
+  /* DMA2_Stream7_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA2_Stream7_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Stream7_IRQn);
+
+}
+
 /**
   * @brief GPIO Initialization Function
   * @param None
@@ -253,6 +275,18 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 		HAL_UART_Transmit_IT(&huart1, data, size);
 		HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
 	}
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
+	static uint8_t echo[50]; // Tablica przechowujaca wysylana wiadomosc.
+
+	sprintf(echo, "Odebrana wiadomosc: %s\n\r", received);
+	HAL_UART_Transmit_DMA(&huart1, echo, 50); // Rozpoczecie nadawania danych z wykorzystaniem przerwan
+	HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+}
+
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart){
+	HAL_UART_Receive_DMA(&huart1,&received,10);
 }
 /* USER CODE END 4 */
 
