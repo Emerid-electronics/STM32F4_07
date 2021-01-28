@@ -243,11 +243,10 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 	uint8_t echo[50];
-	uint8_t size = 0;
 
-	size = sprintf(echo, "Odebrana wiadomosc: %s\r\n", received);
+	sprintf(echo, "Odebrana wiadomosc: %s\r\n", received);
+	HAL_UART_Transmit_IT(&huart1, echo, 50);
 	HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-	HAL_UART_Transmit_IT(&huart1, echo, size);
 }
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart){
